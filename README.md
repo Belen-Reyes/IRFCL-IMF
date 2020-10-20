@@ -10,4 +10,7 @@ Contiene los datos descaragados en IMF para poder referenciarlos en las funcione
 - Etiquetas: contiene únicamente los códigos descritos arriba.<br />
 - Indicadores: Guarda la información segmentada por indicador en caso de querer ejecutar una consulta inmediata de algún indicador de interés.<br />
 - Paises: Guarda la información segmentada por cada país en caso de requerir una consulta inmediata de algun país. <br />
-- Total: Guarda el total de la información descargada en valores netos y porcentuales. 
+- Total: Guarda el total de la información descargada en valores netos y porcentuales. <br />
+
+---- Funciones ---- <br />
+Contiene las funciones de consulta, gráfica y tabulación de los datos. 
