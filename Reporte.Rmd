@@ -1,0 +1,134 @@
+---
+title: "Caso de uso IRFCL-IMF"
+author: "Belén Reyes"
+date: "23/10/2020"
+output: 
+  html_document:
+  theme: cosmo
+---
+
+```{r, include=FALSE, warning=FALSE, message = FALSE}
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(viridis)
+library(zoo)
+library(ggplot2)
+
+load('Total.Rda')
+load('Indicadores.Rda')
+load('Codigos.Rda')
+load('Etiquetas.Rda')
+load('Paises.Rda')
+
+source('~/Belén/Servicio Social/Proyecto R/Funciones.R', encoding = 'UTF-8')
+```
+
+Supongamos que se desean conocer los países con mayores valores promedios netos en el indicador correspondiente a los activos de reserva oficiales y otros activos en moneda extranjera *Official reserve assets and other foreign currency assets*, así como su comportamiento a lo largo del tiempo.
+
+Entonces usamos la función `graf_max()` con los parámetros:
+
+- `RAF_USD`: referente al indicador de interés
+- `total`: el cual señala que se van a solicitar los valores netos del indicador
+
+```{r fig 1, fig.height = 4, fig.width = 8, fig.align = "center", warning=FALSE, message=FALSE}
+graf_max('RAF_USD', 'total')
+```
+
+Si además se desean conocer los fundamentales de estos países, recurrimos a la función `tabla max()` la cual tabula los 5 países con máximos valores promedios en un determinado indicador. En este caso los parámetros usados serán los mismos que los ingresados en la función `graf_max()`
+
+```{r,warning=FALSE,message=FALSE, fig.align = "center"}
+tabla_max('RAF_USD', 'total')
+```
+
+Consideremos ahora el caso en que se deseen conocer los países con menores valores promedios porcentuales (respecto a las reservas totales, es decir respecto a `RAF_USD`) en SDRs, así como su comportamiento a lo largo del tiempo. Sin embargo supongamos que desconocemos el código para dicho indicador.
+
+En ese caso recurrimos a la función `buscar()` de la forma que sigue:
+
+```{r, warning=FALSE,message=FALSE}
+buscar('SDRs')
+```
+
+Entonces podemos usar la función `graf_min()` con los parámetros:
+
+- `RAFASDR_USD`: referente al indicador de interés
+- `porcentaje`: el cual indica que los valores solicitados son porcentuales respecto a las reservas totales
+
+```{r fig 2, fig.height = 4, fig.width = 8, fig.align = "center", warning=FALSE, message=FALSE}
+graf_min('RAFASDR_USD', 'porcentaje')
+```
+
+Si además se desean conocer los fundamentales de estos países, recurrimos a la función `tabla_min()` mediante la cual se tabulan los 5 países con mínimos valores promedios en el indicador solicitado.
+
+```{r,warning=FALSE,message=FALSE, fig.align = "center"}
+tabla_min('RAFASDR_USD', 'porcentaje')
+```
+
+Supongamos ahora que en lugar de querer conocer los países con valores mínimos o máximos se desea comparar el comportamiento de forma porcentual de tres países (Francia, Italia, Reino Unido) en el indicador correspondiente a bancos fuera del país *Banks Headquartered Outside the Reporting Country*. Entonces usamos la función `graf_tres()` con los parámetros:
+
+- `RAFAFXCDBO_USD`: referente al indicador de interés.
+- `c('US','CA','ES')`: el vector de los tres países de interés
+- `porcentaje`: indicando que los valores solicitados con porcentuales
+
+***Nota***
+
+En caso de desconocer los códigos correspondientes para el indicador y los países de interés se puede hacer uso de la función `buscar()` o se pueden correr directamente las variables `CODE_C`y `CODE_I` las cuales contienen los códigos asociados a los países y a los indicadores respectivamente. 
+
+```{r fig 3, fig.height = 4, fig.width = 8, fig.align = "center", warning=FALSE, message=FALSE}
+graf_tres('RAFAFXCDBO_USD',c('FR','IT','GB'),'porcentaje')
+```
+
+Ahora supongamos que no se desean comparar países, si no que se desea conocer los valores netos de un país (México), en el indicador correspondiente a las reservas de oro *gold(including gold deposits and, if approriate, dold swapped)*.
+
+Entonces usamos la función `graf_uno` con los parámetros `RAFAGOLD_USD` y `MX`
+
+```{r fig 4, fig.height = 4, fig.width = 8, fig.align = "center", warning=FALSE, message=FALSE}
+graf_uno('RAFAGOLD_USD','MX')
+```
+
+Pensemos ahora en el caso en que no se desee observar el comportamiento de un país o países respecto a un indicador, sino que únicamente se desea saber el valor total acumulado de un país(México) respecto a un indicador(efectivo total y depósitos *total currency and deposits with*) en una ventana de tiempo (septiembre 2010, junio 2019).
+
+Entonces usamos la función `consulta` con los parámetros:
+
+- `MX`
+- `RAFAFXCD_USD`
+- `2010-09`
+- `2019-06`
+
+```{r,warning=FALSE,message=FALSE, fig.align = "center"}
+consulta('MX','RAFAFXCD_USD','2010-09','2019-06')
+```
+
+Por último, supongamos el caso en que se desee saber la posición de cada país respecto a sus valores porcentuales en un indicador (por ejemplo el efectivo total y depósitos i.e. *Total currency and deposits with:*). Entonces usamos la función `tabla_total()` con los parámetros:
+
+- `RAFAFXCD_USD`
+- `porcentaje`
+
+```{r,warning=FALSE,message=FALSE, fig.align = "center"}
+tabla_total('RAFAFXCD_USD', 'porcentaje')
+```
+
+Así mismo, además de las funciones descritas anteriormente existen variables en la base de datos correspondientes a los datos de los países, los indicadores, y los códigos necesarios para la búsqueda con el fin de poder realizar consultas rápidas en caso de requerirlo.
+
+- La información de cada país y de cada código está guardada bajo su código de búsqueda correspondiente. Por ejemplo si `'MX'` es el código de búsqueda para México, entonces la información de dicho país está guardada con el nombre `MX`, y si `'RAF_USD'` es el código de búsqueda para los activos de reserva oficiales y otros activos en moneda extranjera, entonces la información de este indicador está guardada bajo el nombre `RAF_USD`.
+
+- Además existen dos variables que guardan la información de todos los países considerando todos los indicadores, bajo los nombres: 
+
+  - `TOTAL`: la cual guarda toda la información con los valores netos para cada país y cada indicador.
+  - `TOTAL_P`: la cual guarda toda la información con los valores porcentuales para cada país y cada indicador. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
