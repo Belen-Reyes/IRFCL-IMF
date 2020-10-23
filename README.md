@@ -9,9 +9,13 @@ Contiene los datos descaragados en IMF para poder referenciarlos en las funcione
 - **Codigos:** contiene los códigos y los nombres de los paises e indicadores bajo los cuales se descargaron y guardaron.<br />
   - Code_C: países.<br />
   - Code_I: indicadores.<br />
+  
 - **Etiquetas**: contiene únicamente los códigos descritos arriba.<br />
+
 - **Indicadores**: Guarda la información segmentada por indicador en caso de querer ejecutar una consulta inmediata de algún indicador de interés.<br />
+
 - **Paises**: Guarda la información segmentada por cada país en caso de requerir una consulta inmediata de algun país. <br />
+
 - **Total**: Guarda el total de la información descargada en valores netos y porcentuales. <br />
   - TOTAL : Valores netos. <br />
   - TOTAL_P: Valore porcentuales. <br /> 
