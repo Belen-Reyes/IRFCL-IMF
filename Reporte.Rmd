@@ -21,7 +21,7 @@ load('Codigos.Rda')
 load('Etiquetas.Rda')
 load('Paises.Rda')
 
-source('~/Belén/Servicio Social/Proyecto R/Funciones.R', encoding = 'UTF-8')
+source('~/Funciones.R', encoding = 'UTF-8')
 ```
 
 Supongamos que se desean conocer los países con mayores valores promedios netos en el indicador correspondiente a los activos de reserva oficiales y otros activos en moneda extranjera *Official reserve assets and other foreign currency assets*, así como su comportamiento a lo largo del tiempo.
