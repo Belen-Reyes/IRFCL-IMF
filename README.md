@@ -5,7 +5,7 @@ Base de datos sobre las Reservas Internacionales y la Liquidez en Moneda Extranj
 Contiene el código de descarga de la información a través de una API, de esta forma, cada vez que se deseen actualizar los datos, bastará con correr el código de nuevo y volver a guardar los datos.
 
 ### Data
-Contiene los datos descaragados en IMF para poder referenciarlos en las funciones correspondientes, en donde: <br />
+Contiene los datos descargados en IMF para poder referenciarlos en las funciones correspondientes, en donde: <br />
 - **Codigos:** contiene los códigos y los nombres de los paises e indicadores bajo los cuales se descargaron y guardaron.<br />
   - Code_C: países.<br />
   - Code_I: indicadores.<br />
