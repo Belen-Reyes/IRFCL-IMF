@@ -54,6 +54,8 @@ for (i in 1:length(INDICATOR)){
     df_1 <- df_1[df_1[,3] != 0, ]
     df_1 <- df_1[!duplicated(data.frame(df_1[,1],df_1[,2])), ]
   }
+  df_1 <- df_1[!duplicated(data.frame(df_1[,1],df_1[,2])), ]
+  
   if(i == 1){
     BE <- df_1
   }else{
@@ -89,21 +91,41 @@ df_2 <- data.frame(x = CODE_COUNTRY$codes, description = CODE_COUNTRY$descriptio
 Code_I <- merge(INDICATOR, df_1, all.x = TRUE)
 Code_C <- merge(COUNTRIES, df_2, all.x = TRUE)
 
+# Creación de las listas para Países e Indicadores 
+Indicadores <- list(RAF_USD, RAFA_USD, RAFAFX_USD, RAFAFXS_USD, RAFAFXSI_USD, RAFAFXCD_USD, 
+                    RAFAFXCDN_USD, RAFAFXCDBI_USD, RAFAFXCDBIA_USD, RAFAFXCDBO_USD, RAFAFXCDBOA_USD, 
+                    RAFAIMF_USD, RAFASDR_USD, RAFAGOLD_USD, RAFAGOLDV_OZT, RAFAGOLDVGB_OZT, 
+                    RAFAGOLDVUG_OZT, RAFAO_USD, RAFAOF_USD, RAFAOL_USD, RAOFA_USD, RAOFAS_USD, 
+                    RAOFAD_USD, RAOFAL_USD,RAOFAF_USD, RAOFAG_USD, RAOFAO_USD)
 
-save(RAF_USD, RAFA_USD, RAFAFX_USD, RAFAFXS_USD, RAFAFXSI_USD, RAFAFXCD_USD, 
-     RAFAFXCDN_USD, RAFAFXCDBI_USD, RAFAFXCDBIA_USD, RAFAFXCDBO_USD, RAFAFXCDBOA_USD, 
-     RAFAIMF_USD, RAFASDR_USD, RAFAGOLD_USD, RAFAGOLDV_OZT, RAFAGOLDVGB_OZT, 
-     RAFAGOLDVUG_OZT, RAFAO_USD, RAFAOF_USD, RAFAOL_USD, RAOFA_USD, RAOFAS_USD, 
-     RAOFAD_USD, RAOFAL_USD,RAOFAF_USD, RAOFAG_USD, RAOFAO_USD, 
-     file = "Indicadores.Rda")
+Paises <- list(AL, AR, AM, AU, AT, BY, BE, BO, BR, BG, CA, CL, HK, CN, CO, CR, HR, CY, CZ, 
+               DK, DO, EC, EG, SV, EE, FI, FR, GE, DE, GR, GT, HN, HU, IS, IN, ID, IE, IL, 
+               IT, JM, JP, JO, KZ, KR, KG, LV, LT, LU, MY, MT, MU, MX, MD, MN, MA, NAM, NL, 
+               NZ, NI, MK, NO, PY, PE, PH, PL, PT, RO, RU, SA, RS, SC, SG, SK, SI, ZA, ES, 
+               LK, SE, CH, TH, TN, TR, UA, GB, US, UY, PS)
 
-save(AL, AR, AM, AU, AT, BY, BE, BO, BR, BG, CA, CL, HK, CN, CO, CR, HR, CY, CZ, 
-     DK, DO, EC, EG, SV, EE, FI, FR, GE, DE, GR, GT, HN, HU, IS, IN, ID, IE, IL, 
-     IT, JM, JP, JO, KZ, KR, KG, LV, LT, LU, MY, MT, MU, MX, MD, MN, MA, NAM, NL, 
-     NZ, NI, MK, NO, PY, PE, PH, PL, PT, RO, RU, SA, RS, SC, SG, SK, SI, ZA, ES, 
-     LK, SE, CH, TH, TN, TR, UA, GB,
-     US, UY, PS, file = "Paises.Rda")
+names_i <- c("RAF_USD", "RAFA_USD", "RAFAFX_USD", "RAFAFXS_USD", "RAFAFXSI_USD", 
+             "RAFAFXCD_USD", "RAFAFXCDN_USD", "RAFAFXCDBI_USD", "RAFAFXCDBIA_USD", 
+             "RAFAFXCDBO_USD", "RAFAFXCDBOA_USD", "RAFAIMF_USD", "RAFASDR_USD", 
+             "RAFAGOLD_USD", "RAFAGOLDV_OZT", "RAFAGOLDVGB_OZT", "RAFAGOLDVUG_OZT", 
+             "RAFAO_USD", "RAFAOF_USD", "RAFAOL_USD", "RAOFA_USD", "RAOFAS_USD", 
+             "RAOFAD_USD", "RAOFAL_USD","RAOFAF_USD", "RAOFAG_USD", "RAOFAO_USD")
 
+names_c <- c('AL', 'AR', 'AM', 'AU', 'AT', 'BY', 'BE', 'BO', 'BR', 'BG', 'CA', 
+             'CL', 'HK', 'CN', 'CO', 'CR', 'HR', 'CY', 'CZ', 'DK', 'DO', 'EC', 
+             'EG', 'SV', 'EE', 'FI', 'FR', 'GE', 'DE', 'GR', 'GT', 'HN', 'HU', 
+             'IS', 'IN', 'ID', 'IE', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KR', 
+             'KG', 'LV', 'LT', 'LU', 'MY', 'MT', 'MU', 'MX', 'MD', 'MN', 'MA', 
+             'NAM', 'NL', 'NZ', 'NI', 'MK', 'NO', 'PY', 'PE', 'PH', 'PL', 'PT', 
+             'RO', 'RU', 'SA', 'RS', 'SC', 'SG', 'SK', 'SI', 'ZA', 'ES', 'LK', 
+             'SE', 'CH', 'TH', 'TN', 'TR', 'UA', 'GB', 'US', 'UY', 'PS')
+
+names(Indicadores) <- names_i
+names(Paises) <- names_c
+
+# Guardamos la información
+save(Indicadores, file = "Indicadores.Rda")
+save(Paises, file = "Paises.Rda")
 save(TOTAL, TOTAL_P, file = "Total.Rda")
 save(Code_C, Code_I, file = "Codigos.Rda")
 save(COUNTRIES, INDICATOR, file = "Etiquetas.Rda")
