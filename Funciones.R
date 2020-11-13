@@ -9,6 +9,12 @@ library(zoo)
 library(ggplot2)
 library(formattable)
 library(tidyr)
+library(RColorBrewer)
+library(reactable)
+library(crosstalk)
+library(lubridate)
+library(stringr)
+library(purrr)
 
 load('Total.Rda')
 load('Indicadores.Rda')
@@ -27,7 +33,7 @@ dif_mes <- function(fecha_inicio, fecha_fin){
   m1 <- as.yearmon(strptime(f1, format = '%Y-%m-%d'))
   m2 <- as.yearmon(strptime(f2, format = '%Y-%m-%d'))
   
-  dif_mes <- (m2-m1)*12+1
+  dif_mes <- as.integer((m2-m1)*12+1)+1
   return(dif_mes)
 }
 
@@ -103,43 +109,63 @@ consulta_p <- function(pais, indicador, fecha_inicio, fecha_fin){
 
 # Función para graficar la serie de tiempo de un indicador para un país
 # Formato grafica('INDICADOR','PAIS')
-graf_uno <- function(indicador, pais){
+graf_uno <- function(indicador, pais, tipo){
   
-  aux <- gsub(" ", "", paste(TOTAL[(which(TOTAL$iso2c == pais)),'year_month'],"-01"))
-  date <- as.Date(aux)
-  
-  df <- data.frame(x = date, y = TOTAL[(which(TOTAL$iso2c == pais)), indicador])
+  if(tipo == 'total'){
+    aux <- paste(TOTAL[(which(TOTAL$iso2c == pais)),'year_month'],"-01", sep = '')
+    date <- as.Date(aux)
+    df <- data.frame(x = date, y = TOTAL[(which(TOTAL$iso2c == pais)), indicador])
+  }else{
+    if(tipo=='porcentaje'){
+      aux <- paste(TOTAL_P[(which(TOTAL_P$iso2c == pais)),'year_month'],"-01", sep = '')
+      date <- as.Date(aux)
+      df <- data.frame(x = date, y = TOTAL_P[(which(TOTAL_P$iso2c == pais)), indicador])
+    }
+  }
   
   b_1 <- buscar_inv(indicador)
   b_2 <- buscar_inv(pais)
   title <- paste(b_1,',' ,b_2)
   
-  plot <- ggplot() + 
-    geom_area(data = df, aes(x=x, y=y, fill= b_2), alpha=0.4 , size=.8, 
-              colour="salmon2", outline.type = "upper")+
-    labs(y = 'USD', x = 'Año') + 
-    ggtitle(wrapper(title, width = 85)) + theme_minimal() +
-    theme(plot.title = element_text(size= 9, hjust = 0.5))+
-    scale_fill_discrete(name="Pais")
-  
-  ggplotly(plot)
-  
+  if(tipo == 'total'){
+    plot <- ggplot() + 
+      geom_line(data = df, aes(x=x, y=y), colour = '#DDBB75', size=.9)+
+      labs(y = 'USD', x = 'Año') + 
+      scale_y_continuous(labels = scales::comma)+
+      ggtitle(wrapper(title, width = 85)) +  theme_minimal() +
+      theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+    
+    ggplotly(plot)
+  }else{
+    if(tipo == 'porcentaje'){
+      plot <- ggplot() + 
+        geom_line(data = df, aes(x=x, y=y), colour = '#DDBB75', size=.9)+
+        labs(y = 'USD', x = 'Año') + 
+        scale_y_continuous(labels = scales::percent)+
+        ggtitle(wrapper(title, width = 85)) +  theme_minimal() +
+        theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+      
+      ggplotly(plot)
+    }
+  }
 }
 
 # Funcion aux para las graficas posteriores
 graf_aux <- function(indicador, paises, tipo){
   
   if(tipo== 'total'){
-    aux_1 <- gsub(" ", "", paste(TOTAL[(which(TOTAL$iso2c == paises[1])),
-                                       'year_month'],"-01"))
-    aux_2 <- gsub(" ", "", paste(TOTAL[(which(TOTAL$iso2c == paises[2])),
-                                       'year_month'],"-01"))
-    aux_3 <- gsub(" ", "", paste(TOTAL[(which(TOTAL$iso2c == paises[3])),
-                                       'year_month'],"-01"))
+    aux_1 <- paste(TOTAL[(which(TOTAL$iso2c == paises[1])),'year_month'],"-01",sep = '')
+    aux_2 <- paste(TOTAL[(which(TOTAL$iso2c == paises[2])),'year_month'],"-01",sep = '')
+    aux_3 <- paste(TOTAL[(which(TOTAL$iso2c == paises[3])),'year_month'],"-01",sep = '')
+    aux_4 <- paste(TOTAL[(which(TOTAL$iso2c == paises[4])),'year_month'],"-01",sep = '')
+    aux_5 <- paste(TOTAL[(which(TOTAL$iso2c == paises[5])),'year_month'],"-01",sep = '')
     
     date_1 <- as.Date(aux_1)
     date_2 <- as.Date(aux_2)
     date_3 <- as.Date(aux_3)
+    date_4 <- as.Date(aux_4)
+    date_5 <- as.Date(aux_5)
+    
     
     df_1 <- data.frame(x_1 = date_1, y_1 = TOTAL[(which(TOTAL$iso2c == 
                                                           paises[1])), indicador])
@@ -147,21 +173,29 @@ graf_aux <- function(indicador, paises, tipo){
                                                           paises[2])), indicador])
     df_3 <- data.frame(x_3 = date_3, y_3 = TOTAL[(which(TOTAL$iso2c == 
                                                           paises[3])), indicador])
-    
-    y_l = 'USD'
+    df_4 <- data.frame(x_4 = date_4, y_4 = TOTAL[(which(TOTAL$iso2c == 
+                                                          paises[4])), indicador])
+    df_5 <- data.frame(x_5 = date_5, y_5 = TOTAL[(which(TOTAL$iso2c == 
+                                                          paises[5])), indicador])
+    if(indicador == 'RAFAGOLDV_OZT'){
+      y_l = 'Ounces'
+    }else{
+      y_l = 'USD'
+    }
     
   }else{
-    if(tipo== 'porcentaje'){
-      aux_1 <- gsub(" ", "", paste(TOTAL_P[(which(TOTAL_P$iso2c == 
-                                                    paises[1])),'year_month'],"-01"))
-      aux_2 <- gsub(" ", "", paste(TOTAL_P[(which(TOTAL_P$iso2c == 
-                                                    paises[2])),'year_month'],"-01"))
-      aux_3 <- gsub(" ", "", paste(TOTAL_P[(which(TOTAL_P$iso2c == 
-                                                    paises[3])),'year_month'],"-01"))
+    if(tipo == 'porcentaje'){
+      aux_1 <- paste(TOTAL_P[(which(TOTAL_P$iso2c == paises[1])),'year_month'],"-01",sep = '')
+      aux_2 <- paste(TOTAL_P[(which(TOTAL_P$iso2c == paises[2])),'year_month'],"-01",sep = '')
+      aux_3 <- paste(TOTAL_P[(which(TOTAL_P$iso2c == paises[3])),'year_month'],"-01",sep = '')
+      aux_4 <- paste(TOTAL_P[(which(TOTAL_P$iso2c == paises[4])),'year_month'],"-01",sep = '')
+      aux_5 <- paste(TOTAL_P[(which(TOTAL_P$iso2c == paises[5])),'year_month'],"-01",sep = '')
       
       date_1 <- as.Date(aux_1)
       date_2 <- as.Date(aux_2)
       date_3 <- as.Date(aux_3)
+      date_4 <- as.Date(aux_4)
+      date_5 <- as.Date(aux_5)
       
       df_1 <- data.frame(x_1 = date_1, y_1 = TOTAL_P[(which(TOTAL_P$iso2c == 
                                                               paises[1])), indicador])
@@ -169,6 +203,10 @@ graf_aux <- function(indicador, paises, tipo){
                                                               paises[2])), indicador])
       df_3 <- data.frame(x_3 = date_3, y_3 = TOTAL_P[(which(TOTAL_P$iso2c == 
                                                               paises[3])), indicador])
+      df_4 <- data.frame(x_4 = date_4, y_4 = TOTAL_P[(which(TOTAL_P$iso2c == 
+                                                            paises[4])), indicador])
+      df_5 <- data.frame(x_5 = date_5, y_5 = TOTAL_P[(which(TOTAL_P$iso2c == 
+                                                            paises[5])), indicador])
       
       y_l <- 'Percentage'
       
@@ -177,33 +215,48 @@ graf_aux <- function(indicador, paises, tipo){
     }}
   
   title <- buscar_inv(indicador)
-  values <- list(df_1, df_2, df_3,y_l, title)
+  values <- list(df_1, df_2, df_3,df_4,df_5,y_l, title)
   return(values)
 }
 
 
-# Función para graficar las serie de tiempo de un indicador para tres países
-# Formato grafica_tres('INDICADOR','PAIS')
-graf_tres <- function (indicador, paises, tipo){
+# Función para graficar las serie de tiempo de un indicador para cinco países
+# Formato grafica_5('INDICADOR','PAIS')
+graf_5 <- function (indicador, paises, tipo){
   
   values <- graf_aux(indicador, paises, tipo)
   
-  plot <- ggplot() +
-    geom_area(data = values[[1]], aes(x=x_1, y=y_1, fill= buscar_inv(paises[1])), 
-              alpha=0.3 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[2]], aes(x=x_2, y=y_2, fill= buscar_inv(paises[2])), 
-              alpha=0.4 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[3]], aes(x=x_3, y=y_3, fill= buscar_inv(paises[3])), 
-              alpha=0.5 , size=.8, 
-              colour="white", outline.type = "upper")+
-    scale_fill_brewer(type = 'seq', palette = 16, name = 'Countries')+
-    labs(y = values[[4]], x = 'Year')+
-    ggtitle(wrapper(values[[5]], width = 85)) +  theme_minimal() +
-    theme(plot.title = element_text(size= 9, hjust = 0.5)) 
-  
-  ggplotly(plot)
+  if(tipo == 'total'){
+    plot <- ggplot() +
+      geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+      geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+      geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+      geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+      geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.75)+
+      scale_color_brewer(type = 'qual', palette = 4, name = 'Countries')+
+      scale_y_continuous(labels = scales::comma)+
+      labs(y = values[[6]], x = 'Year')+
+      ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+      theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+    
+    ggplotly(plot)
+  }else{
+    if(tipo == 'porcentaje'){
+      plot <- ggplot() +
+        geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+        geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+        geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+        geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+        geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.7)+
+        scale_color_brewer(type = 'qual', palette = 4, name = 'Countries')+
+        scale_y_continuous(labels = scales::percent)+
+        labs(y = values[[6]], x = 'Year')+
+        ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+        theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+      
+      ggplotly(plot)
+    }
+  }
 }
 
 
@@ -245,35 +298,50 @@ graf_max <- function(indicador, tipo){
   df <- count_aux(indicador,tipo)
   df <- na.omit(df)
   
-  for (i in 1:3){
-    assign(gsub(' ', '', paste('max_',i)), df[df$V2 == max(df[,2]),])
+  for (i in 1:5){
+    assign(paste('max_',i,sep = ''), df[df$V2 == max(df[,2]),])
     df <- df[!(df$V2 == max(df[,2])),]
   }
-  max <- rbind(max_1, max_2, max_3[1,])
+  max <- rbind(max_1, max_2, max_3, max_4, max_5[1,])
   
   paises <- max$V1
   
   values <- graf_aux(indicador, paises, tipo)
   
-  plot <- ggplot() +
-    geom_area(data = values[[1]], aes(x=x_1, y=y_1, fill= buscar_inv(paises[1])), 
-              alpha=0.8 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[2]], aes(x=x_2, y=y_2, fill= buscar_inv(paises[2])), 
-              alpha=0.3 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[3]], aes(x=x_3, y=y_3, fill= buscar_inv(paises[3])), 
-              alpha=0.5 , size=.8, 
-              colour="white", outline.type = "upper")+
-    scale_fill_brewer(type = 'seq', palette = 14, name = 'Countries')+
-    labs(y = values[[4]], x = 'Year')+
-    ggtitle(wrapper(values[[5]], width = 85)) +  theme_minimal() +
-    theme(plot.title = element_text(size= 9, hjust = 0.5)) 
-  
-  ggplotly(plot)
+  if(tipo == 'total'){
+    plot <- ggplot() +
+      geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+      geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+      geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+      geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+      geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.7)+
+      scale_color_brewer(type = 'seq', palette = 4, direction = -1, name = 'Countries')+
+      scale_y_continuous(labels = scales::comma)+
+      labs(y = values[[6]], x = 'Year')+
+      ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+      theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+    
+    ggplotly(plot)
+  }else{
+    if(tipo == 'porcentaje'){
+      plot <- ggplot() +
+        geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+        geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+        geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+        geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+        geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.7)+
+        scale_color_brewer(type = 'seq', palette = 4, direction = -1, name = 'Countries')+
+        scale_y_continuous(labels = scales::percent)+
+        labs(y = values[[6]], x = 'Year')+
+        ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+        theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+      
+      ggplotly(plot)
+    }
+  }
 }
 
-# Función para graficar los tres países con mínimos valores en un determinado indicador
+# Función para graficar los cinco países con mínimos valores en un determinado indicador
 # Formato graf_min('INDICADOR', 'tipo: total, porcentaje')
 
 graf_min <- function(indicador, tipo){
@@ -281,32 +349,47 @@ graf_min <- function(indicador, tipo){
   df <- count_aux(indicador,tipo)
   df <- na.omit(df)
   
-  for (i in 1:3){
+  for (i in 1:5){
     assign(gsub(' ', '', paste('min_',i)), df[df$V2 == min(df[,2]),])
     df <- df[!(df$V2 == min(df[,2])),]
   }
-  min <- rbind(min_3[1,], min_2, min_1)
+  min <- rbind(min_5[1,], min_4, min_3, min_2, min_1)
   
   paises <- min$V1
   
   values <- graf_aux(indicador, paises, tipo)
   
-  plot <- ggplot() +
-    geom_area(data = values[[1]], aes(x=x_1, y=y_1, fill= buscar_inv(paises[1])), 
-              alpha=0.25 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[2]], aes(x=x_2, y=y_2, fill= buscar_inv(paises[2])), 
-              alpha=0.75 , size=.8, 
-              colour="white", outline.type = "upper")+
-    geom_area(data = values[[3]], aes(x=x_3, y=y_3, fill= buscar_inv(paises[3])), 
-              alpha=0.6 , size=.8, 
-              colour="white", outline.type = "upper")+
-    scale_fill_brewer(type = 'seq', palette = 10, name = 'Countries')+
-    labs(y = values[[4]], x = 'Year')+
-    ggtitle(wrapper(values[[5]], width = 85)) +  theme_minimal() +
-    theme(plot.title = element_text(size= 9, hjust = 0.5)) 
-  
-  ggplotly(plot)
+  if(tipo == 'total'){
+    plot <- ggplot() +
+      geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+      geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+      geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+      geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+      geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.7)+
+      scale_color_brewer(type = 'seq', palette = 7, direction = -1, name = 'Countries')+
+      scale_y_continuous(labels = scales::comma)+
+      labs(y = values[[6]], x = 'Year')+
+      ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+      theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+    
+    ggplotly(plot)
+  }else{
+    if(tipo == 'porcentaje'){
+      plot <- ggplot() +
+        geom_line(data = values[[1]], aes(x=x_1, y=y_1, color = buscar_inv(paises[1])), size=.7)+
+        geom_line(data = values[[2]], aes(x=x_2, y=y_2, color = buscar_inv(paises[2])), size=.7)+
+        geom_line(data = values[[3]], aes(x=x_3, y=y_3, color = buscar_inv(paises[3])), size=.7)+
+        geom_line(data = values[[4]], aes(x=x_4, y=y_4, color = buscar_inv(paises[4])), size=.7)+
+        geom_line(data = values[[5]], aes(x=x_5, y=y_5, color = buscar_inv(paises[5])), size=.7)+
+        scale_color_brewer(type = 'seq', palette = 7, direction = -1, name = 'Countries')+
+        scale_y_continuous(labels = scales::percent)+
+        labs(y = values[[6]], x = 'Year')+
+        ggtitle(wrapper(values[[7]], width = 85)) +  theme_minimal() +
+        theme(plot.title = element_text(size= 9, hjust = 0.5)) 
+      
+      ggplotly(plot)
+    }
+  }
 }
 
 # Función para tabular los cinco países con máximos valores en un determinado indicador
@@ -348,18 +431,36 @@ tabla_max <- function(indicador,tipo){
     }
     
     stat <- as.data.frame(rbind(x_1,x_2,x_3,x_4,x_5))
-    is.num <- sapply(stat, is.numeric)
-    stat[is.num] <- lapply(stat[is.num], round, 6)
+    Total <- round(Total, digits = 2)
     
-    table_max <- data.frame(Country, 'USD Monthly Av' = Total, Min = stat$Min., 
-                            Median = stat$Median, Mean = stat$Mean, 
-                            Max = stat$Max.)
+    if(tipo == 'total'){
+      is.num <- sapply(stat, is.numeric)
+      stat[is.num] <- lapply(stat[is.num], round, 2)
+      stat[is.num] <- lapply(stat[is.num], formattable::comma,1)
+      
+      table_max <- data.frame(Country, 'USD Monthly Av' = Total, 
+                              Min = stat$Min., 
+                              Median = stat$Median, 
+                              Mean = stat$Mean, 
+                              Max = stat$Max.)
+    }else{
+      if(tipo == 'porcentaje'){
+        is.num <- sapply(stat, is.numeric)
+        stat[is.num] <- lapply(stat[is.num], round, 4)
+        stat[is.num] <- lapply(stat[is.num], formattable::percent)
+        
+        table_max <- data.frame(Country, 'USD Monthly Av' = Total, 
+                                Min = stat$Min.,
+                                Median = stat$Median, 
+                                Mean = stat$Mean, 
+                                Max = stat$Max.)
+      }
+    }
     
     formattable(table_max, align = c('l','c','c','c','c','c'), list(
       'Country' = formatter("span"),
-      'USD.Monthly.Av' = color_tile('#ffd9cf','#ff9579'),
-      area(col = 3:6) ~ color_tile("#efefef", "#bcbcbc")
-    ))
+      area(col=2,)~ color_tile("#F0F9E8",'#43A2CA')))
+    
   }else{
     print('No hay suficientes países con datos para mostrar')
   }
@@ -404,19 +505,36 @@ tabla_min <- function(indicador,tipo){
     }
     
     stat <- as.data.frame(rbind(x_1,x_2,x_3,x_4,x_5))
-    is.num <- sapply(stat, is.numeric)
-    stat[is.num] <- lapply(stat[is.num], round, 6)
+    Total <- round(Total, digits = 2)
     
-    table_min <- data.frame(Country, 'USD Monthly Av' = Total, Min = stat$Min., 
-                            Median = stat$Median, Mean = stat$Mean, 
-                            Max = stat$Max.)
-
+    if(tipo == 'total'){
+      is.num <- sapply(stat, is.numeric)
+      stat[is.num] <- lapply(stat[is.num], round, 2)
+      stat[is.num] <- lapply(stat[is.num], formattable::comma,1)
+      
+      table_min <- data.frame(Country, 'USD Monthly Av' = Total, 
+                              Min = stat$Min., 
+                              Median = stat$Median, 
+                              Mean = stat$Mean, 
+                              Max = stat$Max.)
+    }else{
+      if(tipo == 'porcentaje'){
+        is.num <- sapply(stat, is.numeric)
+        stat[is.num] <- lapply(stat[is.num], round, 4)
+        stat[is.num] <- lapply(stat[is.num], formattable::percent)
+        
+        table_min <- data.frame(Country, 'USD Monthly Av' = Total, 
+                                Min = stat$Min.,
+                                Median = stat$Median, 
+                                Mean = stat$Mean, 
+                                Max = stat$Max.)
+      }
+    }
     
     formattable(table_min, align = c('l','c','c','c','c','c'), list(
       'Country' = formatter("span"),
-      'USD.Monthly.Av' = color_tile('#bce58e','#73ac31'),
-      area(col = 3:6) ~ color_tile("#efefef", "#bcbcbc")
-    ))
+      area(col=2,)~ color_tile("#FEEDDE",'#FD8D3C')))
+    
   }else{
     print('No hay suficientes países con datos para mostrar')
   }
@@ -464,19 +582,282 @@ tabla_total <- function(indicador, tipo){
   }
   
   stat <- as.data.frame(stat)
-  is.num <- sapply(stat, is.numeric)
-  stat[is.num] <- lapply(stat[is.num], round, 6)
+  aux <- round(aux, digits = 2)
   
-  table <- data.frame(Country, 'USD Monthly Av' = aux, Min = stat$Min., 
-                      Median = stat$Median, Mean = stat$Mean, 
-                      Max = stat$Max.)
+  if(tipo == 'total'){
+    is.num <- sapply(stat, is.numeric)
+    stat[is.num] <- lapply(stat[is.num], round, 2)
+    stat[is.num] <- lapply(stat[is.num], formattable::comma,1)
+    
+    table <- data.frame(Country, 'USD Monthly Av' = aux, 
+                        Min = stat$Min., 
+                        Median = stat$Median, 
+                        Mean = stat$Mean, 
+                        Max = stat$Max.)
+  }else{
+    if(tipo == 'porcentaje'){
+      is.num <- sapply(stat, is.numeric)
+      stat[is.num] <- lapply(stat[is.num], round, 4)
+      stat[is.num] <- lapply(stat[is.num], formattable::percent)
+      
+      table <- data.frame(Country, 'USD Monthly Av' = aux, 
+                          Min = stat$Min.,
+                          Median = stat$Median, 
+                          Mean = stat$Mean, 
+                          Max = stat$Max.)
+    }
+  }
   
   formattable(table, align = c('l','c','c','c','c','c'), list(
     'Country' = formatter("span"),
-    'USD.Monthly.Av' = color_tile('#c4f0f2','#40c1c8'),
-    area(col = 3:6) ~ color_tile("white", "#bcbcbc")
-  ))
+    area(col=2,)~ color_tile("#FFFBE2",'#6BAA9F')))
 }
 
+# Función que imprime una tabla entre dos fechas determinadas respecto a un indicador, 
+# para todos los países, ordenando los datos de mayor a menor en la fecha de inicio 
+# o de fin dependiendo el caso 
 
+tabla_lapso <- function(indicador,fecha_inicio,fecha_fin,tipo,orden){
+  n <- dif_mes(fecha_inicio, fecha_fin)
+  fechas <- as.Date(c())
+  f_1 <- paste(fecha_inicio,'-01',sep = '')
+  
+  for (i in 1:n){
+    fechas[i] <- ymd(as.Date(f_1)) %m+% months(i-1)
+  }
+  
+  fechas <- as.character(fechas)
+  fechas <- str_remove(fechas, '-01')
+  
+  df <- list()
+  
+  if(tipo == 'total'){
+    if(orden == 'creciente'){
+      for (i in 1:n) {
+        df[[i]] <- TOTAL[which(TOTAL$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+      }
+    }else{
+      if(orden =='decreciente'){
+        for (i in 1:n) {
+          df[[(n+1)-i]] <- TOTAL[which(TOTAL$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+        }
+      }
+    }
+  }else{
+    if(tipo == 'porcentaje'){
+      if(orden == 'creciente'){
+        for (i in 1:n) {
+          df[[i]] <- TOTAL_P[which(TOTAL_P$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+        }
+      }else{
+        if(orden=='decreciente'){
+          for (i in 1:n) {
+            df[[(n+1)-i]] <- TOTAL_P[which(TOTAL_P$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+          }
+        }
+      }
+    }
+  }
+  
+  df[[1]] <- na.omit(df[[1]])
+  df_1 <- df[[1]]
+  
+  aux <- sort(df_1[,3], decreasing = T)
+  
+  for (i in 1:length(df_1$iso2c)){
+    a <- df_1[which(df_1[,3] == aux[i]),]
+    if (i == 1){
+      t <- a
+    }else{
+      t <- rbind(t,a)
+    }
+  }
+  
+  df_1 <- t
+  
+  t <- data.frame()
+  a <- c()
+  for(i in 1:n){
+    for(j in 1:length(df_1$iso2c)){
+      a <- df[[i]][which(df[[i]][,1] == df_1[,1][j]),]
+      if (j == 1){
+        t <- a
+      }else{
+        t <- rbind(t,a)
+      }
+    }
+    df[[i]] <- t
+    t <- data.frame()
+  }
+  
+  df <- lapply(df, function(x) { x['year_month'] <- NULL; x })
+  DF <- data.frame()
+  DF <- purrr::reduce(df, full_join, by = "iso2c") %>% replace(., is.na(.), 0)
+  DF <- as.data.frame(DF)
+  
+  Country <- c()
+  for (i in 1:length(df_1$iso2c)){
+    Country[i] <- buscar_inv(DF$iso2c[i])
+  }
+  DF$iso2c <- Country
+  
+  if(orden == 'creciente'){
+    colnames(DF) <- c(indicador,fechas)
+  }else{
+    if(orden == 'decreciente'){
+      colnames(DF) <- c(indicador,rev(fechas)) 
+    }
+  }
+  
+  options(scipen = 999)
+  DF <- as.data.frame(DF)
+  if(n == 1){
+    row.names(DF) <- NULL
+  }
+  DF_1 <- SharedData$new(DF)
+  
+  if(tipo == 'total'){
+    bscols(
+      widths = c(2, 10),
+      list(
+        filter_select("country", "Country", DF_1, ~DF[[indicador]])
+      ),
+      reactable(DF_1, defaultPageSize = as.integer((length(df_1$iso2c)+1)/2),
+                defaultColDef = colDef(format = colFormat(separators = T, digits = 1)),
+                bordered = T)
+    )
+  }else{
+    if(tipo == 'porcentaje'){
+      bscols(
+        widths = c(2, 10),
+        list(
+          filter_select("country", "Country", DF_1, ~DF[[indicador]])
+        ),
+        reactable(DF_1, defaultPageSize = as.integer((length(df_1$iso2c)+1)/2),
+                  defaultColDef = colDef(format = colFormat(percent = T, digits = 2)),
+                  bordered = T)
+      )
+    }
+  }
+}
 
+# Función que crea una tabla entre dos fechas determinadas respecto a un indicador, 
+# para todos los países, ordenando los datos de mayor a menor en la fecha de inicio 
+# o de fin dependiendo el caso 
+
+tabla_lapso_csv <- function(indicador,fecha_inicio,fecha_fin,tipo,orden){
+  n <- dif_mes(fecha_inicio, fecha_fin)
+  fechas <- as.Date(c())
+  f_1 <- paste(fecha_inicio,'-01',sep = '')
+  
+  for (i in 1:n){
+    fechas[i] <- ymd(as.Date(f_1)) %m+% months(i-1)
+  }
+  
+  fechas <- as.character(fechas)
+  fechas <- str_remove(fechas, '-01')
+  
+  df <- vector('list',length = n)
+  
+  if(tipo == 'total'){
+    if(orden == 'creciente'){
+      for (i in 1:n) {
+        df[[i]] <- TOTAL[which(TOTAL$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+      }
+    }else{
+      if(orden=='decreciente'){
+        for (i in 1:n) {
+          df[[n+1-i]] <- TOTAL[which(TOTAL$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+        }
+      }
+    }
+  }else{
+    if(tipo == 'porcentaje'){
+      if(orden == 'creciente'){
+        for (i in 1:n) {
+          df[[i]] <- TOTAL_P[which(TOTAL_P$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+        }
+      }else{
+        if(orden=='decreciente'){
+          for (i in 1:n) {
+            df[[n+1-i]] <- TOTAL_P[which(TOTAL_P$year_month == fechas[i]),c('iso2c','year_month',indicador)]
+          }
+        }
+      }
+    }
+  }
+  
+  df[[1]] <- na.omit(df[[1]])
+  df_1 <- df[[1]]
+  
+  aux <- sort(df_1[,3], decreasing = T)
+  
+  for (i in 1:length(df_1$iso2c)){
+    a <- df_1[which(df_1[,3] == aux[i]),]
+    if (i == 1){
+      t <- a
+    }else{
+      t <- rbind(t,a)
+    }
+  }
+  
+  df_1 <- t
+  
+  t <- data.frame()
+  a <- c()
+  for(i in 1:n){
+    for(j in 1:length(df_1$iso2c)){
+      a <- df[[i]][which(df[[i]][,1] == df_1[,1][j]),]
+      if (j == 1){
+        t <- a
+      }else{
+        t <- rbind(t,a)
+      }
+    }
+    df[[i]] <- t
+    t <- data.frame()
+  }
+  
+  df <- lapply(df, function(x) { x['year_month'] <- NULL; x })
+  DF <- data.frame()
+  DF <- purrr::reduce(df, full_join, by = "iso2c") %>% replace(., is.na(.), 0)
+  DF <- as.data.frame(DF)
+  
+  Country <- c()
+  for (i in 1:length(df_1$iso2c)){
+    Country[i] <- buscar_inv(DF$iso2c[i])
+  }
+  DF$iso2c <- Country
+  
+  if(orden == 'creciente'){
+    colnames(DF) <- c(indicador,fechas)
+  }else{
+    if(orden == 'decreciente'){
+      colnames(DF) <- c(indicador,rev(fechas)) 
+    }
+  }
+  
+  options(scipen = 999)
+  DF <- as.data.frame(DF)
+  
+  if(n >= 2){
+    if(tipo == 'total'){
+      DF[,2:(n+1)] <- lapply(DF[,2:(n+1)], formattable::comma, 1)
+    }else{
+      if(tipo == 'porcentaje'){
+        DF[,2:(n+1)] <- lapply(DF[,2:(n+1)], formattable::percent)
+      }
+    }
+  }else{
+    if(tipo == 'total'){
+      DF[,2] <- formattable::comma(DF[,2])
+    }else{
+      if(tipo == 'porcentaje'){
+        DF[,2] <- formattable::percent(DF[,2])
+        row.names(DF) <- NULL
+      }
+    }
+  }
+
+  return(DF)
+}
