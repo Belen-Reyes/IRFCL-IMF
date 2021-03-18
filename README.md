@@ -1,14 +1,15 @@
 # IRFCL-IMF
-Base de datos sobre las Reservas Internacionales y la Liquidez en Moneda Extranjera de los países pertenecientes al FMI. Última actualización de descarga 05-11-2020.
+Base de datos sobre las Reservas Internacionales y la Liquidez en Moneda Extranjera de los países pertenecientes al FMI. Última actualización de descarga 01-03-2021.
 
 ### IMF 
-Contiene el código de descarga de la información a través de una API, de esta forma, cada vez que se deseen actualizar los datos, bastará con correr el código de nuevo y volver a guardar los datos.
+Contiene el código de descarga de la información a través de una API, así como el proceso de actualización de la shiny en la web. 
 
 ### Data
 Contiene los datos descargados en IMF para poder referenciarlos en las funciones correspondientes, en donde: <br />
 - **Codigos:** contiene los códigos y los nombres de los paises e indicadores bajo los cuales se descargaron y guardaron.<br />
   - Code_C: países.<br />
   - Code_I: indicadores.<br />
+  - Nombres_I: indicadores traducidos al español.<br />
   
 - **Etiquetas**: contiene únicamente los códigos descritos arriba.<br />
 
@@ -22,7 +23,7 @@ Contiene los datos descargados en IMF para poder referenciarlos en las funciones
 
 ### Funciones
 Contiene las funciones de consulta, gráfica y tabulación de los datos. <br />
-- **buscar**: para buscar el código correspondiente de algún país o indicador. Únicamente recibe el nombre del país o del inidcador que se desee buscar `buscar('nombre del país o indicador')`.<br />
+- **buscar**: para buscar el código correspondiente de algún país o indicador. Únicamente recibe el nombre del país o del indicador que se desee buscar `buscar('nombre del país o indicador')`.<br />
 
 - **consulta**: arroja el valor total acumulado de un país repsecto a un indicador entre dos fechas. Recibe los parámetros, país, indicador, fecha_inicio y fecha_fin `consulta('CODE','INDICATOR','YYYY-MM','YYYY-MM')`.<br />
 
